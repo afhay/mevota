@@ -54,7 +54,7 @@ const VoteItem = ({ title, color, creator, time, navigation }) => (
       </Pressable>
       <Pressable onPress={() => null} className="shrink-0 flex justify-center items-center bg-black/20 h-12 w-12 rounded-full">
         <Text className="text-white">
-          <Feather name="share" size="16" color="white" />
+          <Feather name="share" size={16} color="white" />
         </Text>
       </Pressable>
     </StyledView>
