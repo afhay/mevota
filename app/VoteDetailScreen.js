@@ -7,7 +7,7 @@ const StyledView = styled(View);
 export default function VoteDetailScreen() {
   return (
     <StyledView className="flex h-screen items-center justify-center">
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <Text>Vote Detail!</Text>
     </StyledView>
   );

@@ -7,7 +7,7 @@ const StyledView = styled(View);
 export default function NewPollScreen({ navigation }) {
   return (
     <StyledView className="flex h-full items-center justify-center">
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <Text>New Poll Screen</Text>
     </StyledView>
   );

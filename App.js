@@ -10,6 +10,7 @@ import Feather from "@expo/vector-icons/Feather";
 import NewPollScreen from "./app/NewPollScreen";
 import * as fcl from "@onflow/fcl/dist/fcl-react-native";
 import { useEffect, useState } from "react";
+import { StatusBar } from "expo-status-bar";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -17,7 +18,7 @@ const Tab = createBottomTabNavigator();
 export default function App() {
   const [user, setUser] = useState({ loggedIn: null });
   const { services, isLoading, authenticateService } = fcl.useServiceDiscovery({ fcl });
-  
+
   useEffect(() => fcl.currentUser.subscribe(setUser), []);
 
   if (user.loggedIn) {
@@ -53,17 +54,15 @@ export default function App() {
 
   return (
     <View className="flex h-full items-center justify-center bg-dark">
-      <Image className="h-6 w-32 mt-3 mb-2" source={require("./assets/img/logo.png")} />
+      <StatusBar style="light" />
+      <Image className="h-6 w-32 mt-3 mb-3" source={require("./assets/img/logo.png")} />
       <Text className="font-bold text-white mb-12">Mobile Voting on the Blockchain</Text>
 
-      <Text className="text-white/50 mb-2">Connect Your Wallet to Continue</Text>
+      <Text className="text-white/50 mb-3">Connect Your Wallet to Continue</Text>
       {!isLoading &&
         services.map((service, index) => (
           <TouchableOpacity onPress={() => authenticateService(service)} key={service?.provider?.address ?? index}>
-            <View
-              className="w-2/3 p-1 rounded-full flex flex-row items-center justify-center"
-              style={{ backgroundColor: service?.provider?.color }}
-            >
+            <View className="w-64 p-1 rounded-full flex flex-row items-center justify-center" style={{ backgroundColor: service?.provider?.color }}>
               <Image className="h-6 w-6 mt-3 mb-2 mr-2" source={{ uri: service?.provider?.icon }} />
               <Text className="text-dark font-bold">{service?.provider?.name}</Text>
             </View>
