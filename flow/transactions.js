@@ -15,17 +15,43 @@ transaction (title: String, options: [String], color: String, startedAt: UFix64,
 export async function createNewPoll(title, options, color, startedAt, endedAt, isRestricted) {
   return fcl.mutate({
     cadence: CREATE_NEW_POLL,
-		args: (arg, t) => [
-			arg(title, t.String), 
-			arg(options, t.Array(t.String)), 
-			arg(color, t.String),
-			arg(startedAt, t.UFix64),
-			arg(endedAt, t.UFix64),
-			arg(isRestricted, t.Bool),
-		],
-		payer: fcl.authz,
+    args: (arg, t) => [
+      arg(title, t.String),
+      arg(options, t.Array(t.String)),
+      arg(color, t.String),
+      arg(startedAt, t.UFix64),
+      arg(endedAt, t.UFix64),
+      arg(isRestricted, t.Bool),
+    ],
+    payer: fcl.authz,
     proposer: fcl.authz,
     authorizations: [fcl.authz],
-		limit: 1000,
+    limit: 1000,
+  });
+}
+
+const VOTE_POLL = `
+import Mevota from 0xMevota
+transaction (pollId: UInt64, option: String) {
+	let voter: Address
+	prepare(acct: AuthAccount) {
+		self.voter = acct.address
+	}
+	execute {
+		Mevota.vote(pollId: pollId, option: option, voter: self.voter)
+	}
+}`;
+
+export async function votePoll(pollId, option) {
+  return fcl.mutate({
+    cadence: VOTE_POLL,
+    args: (arg, t) => [
+      arg(pollId, t.UInt64),
+      arg(option, t.String),
+    ],
+    payer: fcl.authz,
+    proposer: fcl.authz,
+    authorizations: [fcl.authz],
+    limit: 1000,
   });
 }

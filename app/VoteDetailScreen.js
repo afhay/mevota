@@ -4,8 +4,9 @@ import { styled } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { getDetailPoll } from "../flow/scripts";
-import moment from "moment";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
+import * as fcl from "@onflow/fcl/dist/fcl-react-native";
+import { votePoll } from "../flow/transactions";
 
 const StyledView = styled(View);
 
@@ -41,20 +42,38 @@ export default function VoteDetailScreen({ route, navigation }) {
     }
   }, [pollId]);
 
-  const handleVoted = (option) => {
+  const handleVoted = async (option) => {
     if (votedOption) {
       return Toast.show({ type: "error", text1: "Forbidden", text2: "You have voted", position: "bottom" });
     }
 
-    setVotedOption(option);
-    setVoters((prev) => ([...prev, {address: "0x123456", vote: option}]))
-    return Toast.show({ type: "success", text1: "Success", text2: "Thanks for your vote!", position: "bottom" });
+    setLoading(true);
+
+    try {
+      const txId = await votePoll(pollId, option).catch((err) => console.log("Vorep", err));
+      fcl.tx(txId).subscribe((e) => {
+        if (e?.statusString != "") {
+          Toast.show({ type: "info", text1: e?.statusString });
+        }
+      });
+      await fcl.tx(txId).onceSealed();
+
+      setLoading(false);
+      setVotedOption(option);
+      setVoters((prev) => ([...prev, {address: "0x123456", vote: option}]))
+      Toast.show({ type: "success", text1: "Success", text2: "Thanks for your vote!", position: "bottom" });
+    } catch (error) {
+      setLoading(false);
+      console.log(error);
+      Toast.show({ type: "error", text1: "Failed", text2: error.split("panic: ")[1], position: "bottom" });
+    }
   }
 
   if (loading) {
     return (
       <StyledView className="h-full bg-dark flex flex-col items-center justify-center">
         <ActivityIndicator />
+        <Toast />
       </StyledView>
     );
   }
