@@ -1,27 +1,37 @@
 import { StatusBar } from "expo-status-bar";
-import { FlatList, Image, Pressable, Text, View } from "react-native";
+import { FlatList, Image, Pressable, RefreshControl, Text, View } from "react-native";
 import { styled } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { getActivePolls } from "../flow/scripts";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { reverse } from "lodash";
+import moment from "moment";
 
 const StyledView = styled(View);
 
-const datas = [
-  { id: 1, creator: "0xAddress", title: "Vote for the next Lead Afhay Team", color: "#3B82F6", time: "3h left" },
-  { id: 2, creator: "0xAddress", title: "Vote for the next Lead Afhay Team", color: "#14B8A6", time: "3h left" },
-  { id: 3, creator: "0xAddress", title: "Vote for the next Lead Afhay Team", color: "#f59e0b", time: "3h left" },
-  { id: 4, creator: "0xAddress", title: "Vote for the next Lead Afhay Team", color: "#f43f5e", time: "3h left" },
-  { id: 5, creator: "0xAddress", title: "Vote for the next Lead Afhay Team", color: "#6366F1", time: "3h left" },
-];
-
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [refreshing, setRefreshing] = useState(false);
+  const [polls, setPolls] = useState([]);
 
   useEffect(() => {
-    getActivePolls().then((res) => console.log("RES", res)).catch((err) => console.log("Error", err));
-  })
+    fetchPolls();
+  }, []);
+
+  const fetchPolls = async() => {
+    getActivePolls()
+      .then((res) => {
+        setPolls(reverse(Object.values(res)))
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchPolls();
+    setRefreshing(false);
+  }
 
   return (
     <StyledView
@@ -37,19 +47,28 @@ export default function HomeScreen({ navigation }) {
       <Text className="text-white opacity-50 tracking-widest font-bold text-xs mb-2">ONGOING POLL</Text>
 
       <FlatList
-        data={datas}
-        renderItem={({ item }) => <VoteItem title={item.title} color={item.color} creator={item.creator} time={item.time} navigation={navigation} />}
+        data={polls}
+        renderItem={({ item }) => <VoteItem title={item.title} color={item.color} createdBy={item.createdBy} time={item.endedAt} navigation={navigation} />}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
+        }
       />
     </StyledView>
   );
 }
 
-const VoteItem = ({ title, color, creator, time, navigation }) => (
-  <StyledView className="w-full p-4 rounded-xl mb-4" style={{ backgroundColor: `${color}` }}>
+const VoteItem = ({ title, color, createdBy, time, navigation }) => (
+  <StyledView className={`w-full p-4 rounded-xl mb-4 ${color}`}>
     <StyledView className="flex flex-row items-center justify-between mb-2">
-      <Text className="text-white opacity-50 text-xs">{creator}</Text>
-      <Text className="text-white opacity-50 text-xs">{time}</Text>
+      <StyledView className="flex flex-row items-center">
+        <Image className="w-4 h-4 object-cover rounded-full mr-2" source={{ uri: `https://www.gravatar.com/avatar/${createdBy}?s=200&r=pg&d=retro` }} />
+        <Text className="text-white opacity-50 text-xs">{createdBy.substr(0,4)}...{createdBy.substr(-4,4)}</Text>
+      </StyledView>
+      <Text className="text-white opacity-50 text-xs">{moment(new Date(time * 1000)).fromNow()}</Text>
     </StyledView>
     <Text className="text-white font-bold text-2xl mb-3">{title}</Text>
     <StyledView className="flex flex-row items-center justify-between mb-2 gap-2">

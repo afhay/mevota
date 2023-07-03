@@ -46,7 +46,7 @@ export default function NewPollScreen({ navigation }) {
       const txId = await createNewPoll(title, options, color, (Date.parse(startedAt) / 1000).toFixed(1), (Date.parse(endedAt) / 1000).toFixed(1), isRestricted);
       fcl.tx(txId).subscribe((e) => {
         if (e?.statusString != "") {
-          Toast.show({ type: "warning", text1: e?.statusString });
+          Toast.show({ type: "info", text1: e?.statusString });
         }
       });
       await fcl.tx(txId).onceSealed();
