@@ -28,3 +28,18 @@ export async function getDetailPoll(pollId) {
 		],
   });
 }
+
+const GET_POLL_RESULT = `
+import Mevota from 0xMevota
+pub fun main(pollId: UInt64): {String: UInt64} {
+  return Mevota.getPollResult(pollId: pollId)
+}`;
+
+export async function getPollResult(pollId) {
+  return fcl.query({
+    cadence: GET_POLL_RESULT,
+    args: (arg, t) => [
+			arg(pollId, t.UInt64), 
+		],
+  });
+}

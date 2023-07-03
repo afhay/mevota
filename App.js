@@ -18,7 +18,6 @@ const Tab = createBottomTabNavigator();
 export default function App() {
   const [user, setUser] = useState({ loggedIn: null });
   const { services, isLoading, authenticateService } = fcl.useServiceDiscovery({ fcl });
-
   useEffect(() => fcl.currentUser.subscribe(setUser), []);
 
   const MyTheme = {

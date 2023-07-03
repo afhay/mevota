@@ -68,7 +68,7 @@ const VoteItem = ({ pollId, title, color, createdBy, time, navigation }) => (
         <Image className="w-4 h-4 object-cover rounded-full mr-2" source={{ uri: `https://www.gravatar.com/avatar/${createdBy}?s=200&r=pg&d=retro` }} />
         <Text className="text-white opacity-50 text-xs">{createdBy.substr(0,4)}...{createdBy.substr(-4,4)}</Text>
       </StyledView>
-      <Text className="text-white opacity-50 text-xs">{moment(new Date(time * 1000)).fromNow()}</Text>
+      <Text className="text-white opacity-50 text-xs">Ended {moment(new Date(time * 1000)).fromNow()}</Text>
     </StyledView>
     <Text className="text-white font-bold text-2xl mb-3">{title}</Text>
     <StyledView className="flex flex-row items-center justify-between mb-2 gap-2">
