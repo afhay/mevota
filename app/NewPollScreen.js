@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Button, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { styled } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
@@ -7,6 +7,8 @@ import { useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
 import { uniq } from "lodash";
+import { createNewPoll } from "../flow/transactions";
+import * as fcl from "@onflow/fcl/dist/fcl-react-native";
 
 const StyledView = styled(View);
 
@@ -14,6 +16,7 @@ const colors = ["bg-zinc-800", "bg-blue-500", "bg-indigo-500", "bg-teal-500", "b
 
 export default function NewPollScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const [loading, setLoading] = useState(false);
   const [color, setColor] = useState("bg-zinc-800");
   const [title, setTitle] = useState("");
   const [options, setOptions] = useState(["", ""]);
@@ -21,7 +24,12 @@ export default function NewPollScreen({ navigation }) {
   const [endedAt, setEndedAt] = useState(new Date());
   const [isRestricted, setIsRestricted] = useState(false);
 
-  const handlePostPoll = () => {
+  const handlePostPoll = async () => {
+    if (loading) {
+      return;
+    }
+
+    setLoading(true);
     if (title == "") {
       return Toast.show({ type: "error", text1: "Error: Title", text2: "Title is required" });
     }
@@ -32,6 +40,24 @@ export default function NewPollScreen({ navigation }) {
 
     if (uniq(options).length !== options.length) {
       return Toast.show({ type: "error", text1: "Error: Options", text2: "Options must be unique" });
+    }
+
+    try {
+      const txId = await createNewPoll(title, options, color, (Date.parse(startedAt) / 1000).toFixed(1), (Date.parse(endedAt) / 1000).toFixed(1), isRestricted);
+      fcl.tx(txId).subscribe((e) => {
+        if (e?.statusString != "") {
+          Toast.show({ type: "warning", text1: e?.statusString });
+        }
+      });
+      await fcl.tx(txId).onceSealed();
+      setLoading(false);
+      Toast.show({ type: "success", text1: "Success", text2: "Poll has been published" });
+      setTimeout(() => {
+        return navigation.navigate("Home");
+      }, 2500);
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
     }
   };
 
@@ -140,9 +166,11 @@ export default function NewPollScreen({ navigation }) {
         </StyledView>
       </ScrollView>
       <TouchableOpacity onPress={handlePostPoll}>
-        <StyledView className="w-full h-14 bg-amber-400 rounded-full flex flex-row items-center justify-center shadow shadow-amber-500/50">
-          <Feather name="send" size={16} color="#222" />
-          <Text className="font-bold ml-2">POST NOW</Text>
+        <StyledView
+          className={`w-full h-14 bg-amber-400 rounded-full flex flex-row items-center justify-center shadow shadow-amber-500/50 ${loading && "opacity-75"}`}
+        >
+          {loading ? <ActivityIndicator /> : <Feather name="send" size={16} color="#222" />}
+          <Text className="font-bold ml-2">{loading ? 'POSTING...' : 'POST NOW'}</Text>
         </StyledView>
       </TouchableOpacity>
 
