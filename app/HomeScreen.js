@@ -48,7 +48,7 @@ export default function HomeScreen({ navigation }) {
 
       <FlatList
         data={polls}
-        renderItem={({ item }) => <VoteItem title={item.title} color={item.color} createdBy={item.createdBy} time={item.endedAt} navigation={navigation} />}
+        renderItem={({ item }) => <VoteItem pollId={item.id} title={item.title} color={item.color} createdBy={item.createdBy} time={item.endedAt} navigation={navigation} />}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl
@@ -61,7 +61,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const VoteItem = ({ title, color, createdBy, time, navigation }) => (
+const VoteItem = ({ pollId, title, color, createdBy, time, navigation }) => (
   <StyledView className={`w-full p-4 rounded-xl mb-4 ${color}`}>
     <StyledView className="flex flex-row items-center justify-between mb-2">
       <StyledView className="flex flex-row items-center">
@@ -72,7 +72,9 @@ const VoteItem = ({ title, color, createdBy, time, navigation }) => (
     </StyledView>
     <Text className="text-white font-bold text-2xl mb-3">{title}</Text>
     <StyledView className="flex flex-row items-center justify-between mb-2 gap-2">
-      <Pressable onPress={() => navigation.navigate("VoteDetail")} className="flex-1 flex justify-center items-center bg-black/20 h-12 rounded-full">
+      <Pressable onPress={() => navigation.navigate("VoteDetail", {
+        pollId: pollId
+      })} className="flex-1 flex justify-center items-center bg-black/20 h-12 rounded-full">
         <StyledView>
           <Text className="text-white font-bold">Vote Now</Text>
         </StyledView>

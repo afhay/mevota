@@ -1,5 +1,5 @@
 import "./flow/config";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Image, Text, TouchableOpacity, View } from "react-native";
@@ -21,9 +21,18 @@ export default function App() {
 
   useEffect(() => fcl.currentUser.subscribe(setUser), []);
 
+  const MyTheme = {
+    ...DarkTheme,
+    dark: true,
+    colors: {
+      ...DarkTheme.colors,
+      primary: "#FACC15",
+    },
+  };
+
   if (user.loggedIn) {
     return (
-      <NavigationContainer>
+      <NavigationContainer theme={MyTheme}>
         <Stack.Navigator
           initialRouteName="Homes"
           screenOptions={({ route }) => ({
@@ -46,7 +55,13 @@ export default function App() {
             )}
           </Stack.Screen>
 
-          <Stack.Screen name="VoteDetail" component={VoteDetailScreen} />
+          <Stack.Screen
+            name="VoteDetail"
+            component={VoteDetailScreen}
+            options={{
+              headerTitle: "Vote Detail",
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     );
