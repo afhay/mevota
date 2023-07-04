@@ -11,14 +11,6 @@ import { map, sum } from "lodash";
 
 const StyledView = styled(View);
 
-const votersSample = [
-  { address: "0x39b8492838492658", vote: "Raff" },
-  { address: "0x39b8492838492653", vote: "Raff" },
-  { address: "0x39b8492838492655", vote: "Thomas" },
-  { address: "0x39b8492838492652", vote: "Raff" },
-  { address: "0x39b8492838492651", vote: "Thomas" },
-];
-
 export default function VoteDetailScreen({ route, navigation }) {
   const [user, setUser] = useState({ loggedIn: null });
   const insets = useSafeAreaInsets();
@@ -36,13 +28,15 @@ export default function VoteDetailScreen({ route, navigation }) {
     if (pollId) {
       fetchPoll(pollId);
       fetchResult(pollId);
-      setVoters(votersSample);
     }
   }, [pollId]);
 
   useEffect(() => {
     if (poll) {
       setHasVoted(poll?.votes[user?.addr] ?? false);
+      let voteData = [];
+      map(poll?.votes, (val, key) => voteData.push({address: key, vote: val}))
+      setVoters(voteData);
     }
   }, [poll]);
 
@@ -68,7 +62,7 @@ export default function VoteDetailScreen({ route, navigation }) {
   };
 
   const handleVoted = async (option) => {
-    if (votedOption) {
+    if (hasVoted) {
       return;
     }
 
@@ -87,7 +81,6 @@ export default function VoteDetailScreen({ route, navigation }) {
 
       setLoading(false);
       setVotedOption(option);
-      setVoters((prev) => [...prev, { address: "0x123456", vote: option }]);
       Toast.show({ type: "success", text1: "Success", text2: "Thanks for your vote!", position: "bottom" });
     } catch (error) {
       setLoading(false);
