@@ -52,6 +52,8 @@ export default function NewPollScreen({ navigation }) {
       await fcl.tx(txId).onceSealed();
       setLoading(false);
       Toast.show({ type: "success", text1: "Success", text2: "Poll has been published" });
+      setTitle("");
+      setOptions(["", ""]);
       setTimeout(() => {
         return navigation.navigate("Home");
       }, 2500);
@@ -170,7 +172,7 @@ export default function NewPollScreen({ navigation }) {
           className={`w-full h-14 bg-amber-400 rounded-full flex flex-row items-center justify-center shadow shadow-amber-500/50 ${loading && "opacity-75"}`}
         >
           {loading ? <ActivityIndicator /> : <Feather name="send" size={16} color="#222" />}
-          <Text className="font-bold ml-2">{loading ? 'POSTING...' : 'POST NOW'}</Text>
+          <Text className="font-bold ml-2">{loading ? "POSTING..." : "POST NOW"}</Text>
         </StyledView>
       </TouchableOpacity>
 

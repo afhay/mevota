@@ -55,3 +55,35 @@ export async function votePoll(pollId, option) {
     limit: 1000,
   });
 }
+
+const ADD_ALLOWED_VOTERS = `
+import Mevota from 0xMevota
+transaction (pollId: UInt64, voter: Address) {
+  let voter: Address
+	prepare(acct: AuthAccount) {
+		self.voter = acct.address
+	}
+	execute {
+		let poll = Mevota.polls[pollId] ?? panic("Poll not found")
+    
+    if poll.createdBy != self.voter {
+      panic("Only creator can add allowed voters")
+    }
+
+    Mevota.addAllowedVoters(pollId: pollId, voter: voter)
+	}
+}`;
+
+export async function addVoter(pollId, voter) {
+  return fcl.mutate({
+    cadence: ADD_ALLOWED_VOTERS,
+    args: (arg, t) => [
+      arg(pollId, t.UInt64),
+      arg(voter, t.Address),
+    ],
+    payer: fcl.authz,
+    proposer: fcl.authz,
+    authorizations: [fcl.authz],
+    limit: 1000,
+  });
+}

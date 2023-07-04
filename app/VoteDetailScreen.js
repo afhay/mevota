@@ -1,13 +1,13 @@
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, FlatList, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Button, FlatList, Image, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { styled } from "nativewind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { getDetailPoll, getPollResult } from "../flow/scripts";
 import { Toast } from "react-native-toast-message/lib/src/Toast";
 import * as fcl from "@onflow/fcl/dist/fcl-react-native";
-import { votePoll } from "../flow/transactions";
-import { map, sum } from "lodash";
+import { addVoter, votePoll } from "../flow/transactions";
+import { find, map, sum } from "lodash";
 
 const StyledView = styled(View);
 
@@ -17,10 +17,11 @@ export default function VoteDetailScreen({ route, navigation }) {
   const { pollId } = route.params;
   const [loading, setLoading] = useState(true);
   const [poll, setPoll] = useState();
-  const [votedOption, setVotedOption] = useState();
+  const [newVoter, setNewVoter] = useState("");
   const [voters, setVoters] = useState([]);
   const [result, setResult] = useState();
   const [hasVoted, setHasVoted] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => fcl.currentUser.subscribe(setUser), []);
 
@@ -34,9 +35,18 @@ export default function VoteDetailScreen({ route, navigation }) {
   useEffect(() => {
     if (poll) {
       setHasVoted(poll?.votes[user?.addr] ?? false);
+
+      // set voters
       let voteData = [];
-      map(poll?.votes, (val, key) => voteData.push({address: key, vote: val}))
+      map(poll?.votes, (val, key) => voteData.push({ address: key, vote: val }));
       setVoters(voteData);
+
+      // set allowed voters
+      if (poll.isRestricted) {
+        let allowedData = [];
+        map(poll?.allowedVoters, (val, key) => allowedData.push({ address: key, vote: poll?.votes[key] ?? "" }));
+        setVoters(allowedData);
+      }
     }
   }, [poll]);
 
@@ -66,10 +76,14 @@ export default function VoteDetailScreen({ route, navigation }) {
       return;
     }
 
+    if (poll.isRestricted && !find(voters, (r) => r.address === user?.addr)) {
+      return Toast.show({ type: "error", text1: "You're not allowed to vote" });
+    }
+
     setLoading(true);
 
     try {
-      const txId = await votePoll(pollId, option).catch((err) => console.log("Vorep", err));
+      const txId = await votePoll(pollId, option).catch((err) => console.log(err));
       fcl.tx(txId).subscribe((e) => {
         if (e?.statusString != "") {
           Toast.show({ type: "info", text1: e?.statusString });
@@ -80,12 +94,39 @@ export default function VoteDetailScreen({ route, navigation }) {
       await fetchResult(pollId);
 
       setLoading(false);
-      setVotedOption(option);
       Toast.show({ type: "success", text1: "Success", text2: "Thanks for your vote!", position: "bottom" });
     } catch (error) {
       setLoading(false);
       console.log(error);
       Toast.show({ type: "error", text1: "Failed", text2: error.split("panic: ")[1], position: "bottom" });
+    }
+  };
+
+  const handleNewVoter = async () => {
+    setLoading(true);
+    if (newVoter == "") {
+      setLoading(false);
+      return Toast.show({ type: "error", text1: "Error: Wallet Address", text2: "Wallet Address is required" });
+    }
+
+    try {
+      const txId = await addVoter(pollId, newVoter).catch((err) => console.log(err));
+      fcl.tx(txId).subscribe((e) => {
+        if (e?.statusString != "") {
+          Toast.show({ type: "info", text1: e?.statusString });
+        }
+      });
+      await fcl.tx(txId).onceSealed();
+      await fetchPoll(pollId);
+      await fetchResult(pollId);
+
+      setLoading(false);
+      setModalVisible(false);
+      Toast.show({ type: "success", text1: "Success", text2: "Success add new voter", position: "bottom" });
+    } catch (error) {
+      setLoading(false);
+      console.log(error);
+      Toast.show({ type: "error", text1: "Failed", text2: error?.split("panic: ")[1], position: "bottom" });
     }
   };
 
@@ -149,7 +190,53 @@ export default function VoteDetailScreen({ route, navigation }) {
         </StyledView>
 
         <StyledView className="mt-8">
-          <Text className="text-white/50 text-xl font-bold mb-4">Voters ({voters.length})</Text>
+          <StyledView className="flex flex-row items-center justify-between mb-4">
+            <Text className="text-white/50 text-xl font-bold">Voters ({voters.length})</Text>
+            {poll?.isRestricted && (poll?.createdBy === user?.addr) && (
+              <>
+                <Pressable onPress={() => setModalVisible(true)}>
+                  <Text className="font-bold text-amber-400">+ Voter</Text>
+                </Pressable>
+                <Modal
+                  animationType="slide"
+                  transparent={true}
+                  visible={modalVisible}
+                  onRequestClose={() => {
+                    Alert.alert("Modal has been closed.");
+                    setModalVisible(!modalVisible);
+                  }}
+                >
+                  <StyledView className="h-full w-full flex items-center justify-center bg-black/50">
+                    <StyledView className="w-3/4 bg-white rounded-xl p-4">
+                      <Text className="font-bold text-lg mb-4">Add Voters</Text>
+
+                      <Text className="text-dark/70 mb-2">Wallet Address</Text>
+                      <TextInput
+                        onChangeText={setNewVoter}
+                        value={newVoter}
+                        className="w-full h-14 bg-dark/10 rounded-xl px-4 text-dark mb-4 border border-dark/20"
+                      />
+
+                      <StyledView className="flex flex-row items-center justify-end">
+                        <Pressable
+                          onPress={() => {
+                            setNewVoter("");
+                            setModalVisible(!modalVisible);
+                          }}
+                          className="px-4 py-2 bg-zinc-200 rounded mr-2"
+                        >
+                          <Text>Cancel</Text>
+                        </Pressable>
+                        <Pressable onPress={() => handleNewVoter()} className="px-4 py-2 bg-amber-400 rounded">
+                          <Text>Submit</Text>
+                        </Pressable>
+                      </StyledView>
+                    </StyledView>
+                  </StyledView>
+                </Modal>
+              </>
+            )}
+          </StyledView>
           {/* <FlatList data={voters} renderItem={({ item }) => <VotersItem address={item.address} vote={item.vote} />} keyExtractor={(item) => item.address} /> */}
           {voters.map((i) => (
             <VotersItem address={i.address} vote={i.vote} key={i.address} />
@@ -170,10 +257,16 @@ const VotersItem = ({ address, vote }) => (
       </Text>
     </StyledView>
     <StyledView>
-      <Text className="text-white/50">
-        Voted {vote.substr(0, 10)}
-        {vote.length > 10 && "..."}
-      </Text>
+      {vote === "" ? (
+        <Text className="text-white/50">
+          -
+        </Text>
+      ) : (
+        <Text className="text-white/50">
+          Voted {vote.substr(0, 10)}
+          {vote.length > 10 && "..."}
+        </Text>
+      )}
     </StyledView>
   </StyledView>
 );
