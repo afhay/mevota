@@ -61,7 +61,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const VoteItem = ({ pollId, title, color, createdBy, time, navigation }) => (
+export const VoteItem = ({ pollId, title, color, createdBy, time, navigation, cta = 'Vote Now' }) => (
   <StyledView className={`w-full p-4 rounded-xl mb-4 ${color}`}>
     <StyledView className="flex flex-row items-center justify-between mb-2">
       <StyledView className="flex flex-row items-center">
@@ -76,7 +76,7 @@ const VoteItem = ({ pollId, title, color, createdBy, time, navigation }) => (
         pollId: pollId
       })} className="flex-1 flex justify-center items-center bg-black/20 h-12 rounded-full">
         <StyledView>
-          <Text className="text-white font-bold">Vote Now</Text>
+          <Text className="text-white font-bold">{cta}</Text>
         </StyledView>
       </Pressable>
       <Pressable onPress={() => null} className="shrink-0 flex justify-center items-center bg-black/20 h-12 w-12 rounded-full">

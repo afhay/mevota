@@ -1,5 +1,17 @@
 import * as fcl from "@onflow/fcl/dist/fcl-react-native";
 
+const GET_ALL_POLLS = `
+import Mevota from 0xMevota
+pub fun main(): {UInt64: Mevota.Poll} {
+  return Mevota.polls
+}`;
+
+export async function getAllPolls() {
+  return fcl.query({
+    cadence: GET_ALL_POLLS,
+  });
+}
+
 const GET_ACTIVE_POLLS = `
 import Mevota from 0xMevota
 pub fun main(): {UInt64: Mevota.Poll} {
@@ -16,7 +28,7 @@ export async function getActivePolls() {
 const GET_DETAIL_POLL = `
 import Mevota from 0xMevota
 pub fun main(pollId: UInt64): Mevota.Poll {
-  let polls = Mevota.getActivePolls()
+  let polls = Mevota.polls
   return polls[pollId] ?? panic("Poll not found")
 }`;
 
